@@ -13,3 +13,26 @@ executors:
 orbs:
   aws-eks: circleci/aws-eks@1.0.3
   kubernetes: circleci/kubernetes@0.11.2
+
+
+jobs:
+  lint-app:
+    executor: python
+    steps:
+      - checkout
+      - run:
+          name: install dependencies
+          command: |
+            make setup
+            . venv/bin/activate
+            make install
+      - run:
+          name: run lint
+          command: |
+            . venv/bin/activate
+            make lint    
+
+workflows:
+  deployment:
+    jobs:
+      - lint-app
