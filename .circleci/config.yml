@@ -32,7 +32,29 @@ jobs:
             . venv/bin/activate
             make lint    
 
+  build-push-docker-image:
+    machine: true
+    working_directory: ~/app
+    steps:
+      - checkout
+      - run:
+          name: build and push docker image
+          command: |
+            #Login to docker hub
+            docker login --username $DOCKE_USERNAME --password $DOCKER_PASSWORD
+            # Build image and add a descriptive tag
+            docker build --tag=capstone .
+            # List docker images
+            docker image ls
+            # Tag and push image to a docker repository
+            docker tag capstone sisihliay/capstone
+            docker push sisihliay/capstone
+
+
 workflows:
   deployment:
     jobs:
       - lint-app
+      - build-push-docker-image:
+          requires: [lint-app]
+
