@@ -65,7 +65,7 @@ jobs:
           install-kubectl: true
       - kubernetes/create-or-update-resource:
           # get-rollout-status: true
-          resource-file-path: deployment.yml
+          resource-file-path: deployment.yaml
           resource-name: deployment/mycapstone
 
   check-cluster:
@@ -83,7 +83,8 @@ jobs:
           name: check cluster
           command: |
             kubectl get nodes -o wide
-            kubectl get deployment -n default
+            kubectl get deployment -A
+            kubectl get svc -A
 
 #workflow
 workflows:
@@ -111,3 +112,7 @@ workflows:
       - check-cluster:
           cluster-name: mycapstone
           requires: [aws-eks/update-container-image]
+      - aws-eks/delete-cluster:
+          cluster-name: mycapstone
+          requires:
+            - check-cluster
