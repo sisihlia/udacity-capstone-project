@@ -50,6 +50,26 @@ jobs:
             docker tag capstone sisihliay/capstone
             docker push sisihliay/capstone
 
+  deploy-to-cluster:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          uda-cap
+        type: string
+    steps:
+      - checkout
+      - kubernetes/install
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+          install-kubectl: true
+      - kubernetes/create-or-update-resource:
+          # get-rollout-status: true
+          resource-file-path: deployment.yml
+          resource-name: deployment/mycapstone
+
+
+
 
 workflows:
   deployment:
@@ -57,4 +77,19 @@ workflows:
       - lint-app
       - build-push-docker-image:
           requires: [lint-app]
-
+      - aws-eks/create-cluster:
+          cluster-name: mycapstone
+      - deploy-to-cluster:
+          cluster-name: mycapstone
+          requires: [aws-eks/create-cluster]
+      - aws-eks/update-container-image:
+          cluster-name: mycapstone
+          container-image-updates: mycapstone=sisihliay/capstone
+          post-steps:
+              - kubernetes/delete-resource:
+                  resource-names: mycapstone
+                  resource-types: deployment
+                  wait: true
+          record: true
+          requires: [deploy-to-cluster]
+          resource-name: deployment/mycapstone
